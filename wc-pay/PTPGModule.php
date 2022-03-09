@@ -1,8 +1,11 @@
-<?php
-/**
-* Copyright (C) Pay10 2021  - All Rights Reserved
-* Created by Rohit Kumar Singh
-*/
+<?php 
+//include('config.php');
+
+/* Copyright (C) Pay10 2021  - All Rights Reserved
+ * Created by Rohit Kumar Singh
+ *
+ */
+
 class PTPGModule
 {
     /**
@@ -148,10 +151,8 @@ class PTPGModule
      * @var [type]
      */
     private $pg_request_url;
-
-    function __construct()
-    {
-    }
+    private $pg_merchant_hosted_key;
+    
 
     /**
      * @param string $pay_id
@@ -425,7 +426,6 @@ class PTPGModule
     public function setTxnType($txn_type)
     {
         $this->txn_type = $txn_type;
-
         return $this;
     }
 
@@ -440,6 +440,15 @@ class PTPGModule
 
         return $this;
     }
+
+    public function setMerchantHostedKey($pg_merchant_hosted_key)
+    {
+        $this->pg_merchant_hosted_key = $pg_merchant_hosted_key;
+
+        return $this;
+    }
+
+    
 
     /**
      * [_empty to remove null values]
@@ -548,6 +557,8 @@ class PTPGModule
         }
         $all = substr($all, 0, -1);
         $all .= $salt;
+        
+      
 
         $generated_hash = strtoupper(hash('sha256', $all));
     
@@ -574,12 +585,37 @@ class PTPGModule
         exit();
     }
 
-    /**
-     * [handleResponse description]
-     * @return string [description]
-     */
-    public function handleResponse()
+
+    //for aes encrytion
+
+    public function aes_encyption($hash_string){
+     $CryptoKey= $this->pg_merchant_hosted_key; //Prod Key
+     $iv = substr($CryptoKey, 0, 16); //or provide iv
+     $method = "AES-256-CBC";
+     $ciphertext = openssl_encrypt($hash_string, $method, $CryptoKey, OPENSSL_RAW_DATA, $iv);
+     $ENCDATA= base64_encode($ciphertext);
+     return $ENCDATA;
+    }       
+
+    public function aes_decryption($ENCDATA){
+    $CryptoKey= $this->pg_merchant_hosted_key; //Prod Key
+    $iv = substr($CryptoKey, 0, 16); //or provide iv
+    $method = "AES-256-CBC";
+    $encrptedString  = openssl_decrypt($ENCDATA, $method, $CryptoKey, 0, $iv);
+    return $encrptedString;
+    }  
+
+    public function split_decrypt_string($value)
     {
-        return json_encode($_REQUEST, JSON_PRETTY_PRINT);
+        $plain_string=explode('~',$value);
+        $final_data = array();
+        foreach ($plain_string as $key => $value) {
+            $simple_string=explode('=',$value);
+           $final_data[$simple_string[0]]=$simple_string[1];
+        } 
+        return $final_data;
     }
+
 }
+
+?>

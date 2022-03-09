@@ -41,9 +41,16 @@ function woocommerce_pay_init()
             $this->salt                 = $this->settings['salt'];
             $this->currency_code        = $this->settings['currency_code'];
             $this->mode                 = $this->settings['mode'];
-            $this->pg_request_url       = 'https://secure.pay10.com/pgui/jsp/paymentrequest';
-            //$this->pg_request_url       = 'https://uat.pay.com/crm/jsp/paymentrequest';
+            $this->merchant_hosted_key = $this->settings['merchant_hosted_key'];
+           // print_r($this->settings['mode']);exit;
 
+            if($this->settings['mode']=='no'){
+              $this->pg_request_url       = 'https://secure.pay10.com/pgui/jsp/paymentrequest';
+              }
+            else{
+              $this->pg_request_url       = 'https://uat.pay10.com/pgui/jsp/paymentrequest';
+              }
+            
             // Actions
             add_action('init', array( $this, 'check_pay_response' ));
             add_action('woocommerce_api_wc_gateway_pay', array( $this, 'check_pay_response' ));
@@ -167,6 +174,12 @@ function woocommerce_pay_init()
             $cart_page = $this->get_page_by_name('cart');
 
             require_once dirname(__FILE__).'/PTPGModule.php';
+            $transaction_request = new PTPGModule();
+            //echo $this->merchant_hosted_key;exit;
+            $transaction_request->setSalt($this->salt);
+            $transaction_request->setMerchantHostedKey($this->merchant_hosted_key);
+            $string = $transaction_request->aes_decryption($_POST['ENCDATA']);
+            $response = $transaction_request->split_decrypt_string($string);
 
             /* WooCommerce update order */
             if (isset($response['RESPONSE_CODE'])) {
@@ -237,12 +250,12 @@ function woocommerce_pay_init()
                     'description' => __('Please enter your secret salt.', 'woocommerce'),
                     'default'     => ''
                 ),
-                // 'currency_code' => array(
-                //     'title'       => __('Currency Code', 'woocommerce'),
-                //     'type'        => 'text',
-                //     'description' => __('Please enter currency code', 'woocommerce'),
-                //     'default'     => '356'
-                // ),
+                'merchant_hosted_key' => array(
+                    'title'       => __('Merchant Hosted Key', 'woocommerce'),
+                    'type'        => 'text',
+                    'description' => __('Please enter merchant hosted key', 'woocommerce'),
+                    'default'     => ''
+                ),
                 'success_message' => array(
                     'title'       => __('Success message', 'woocommerce'),
                     'type'        => 'text',
