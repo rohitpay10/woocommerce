@@ -3,7 +3,7 @@
  Plugin Name: Pay10 Gateway for WooCommerce
  Plugin URI: http://www.pay10.com/
  Description: Pay10 PG WooCommerce integration
- Version: 1.0
+ Version: 2.0
  Author: Rohit Kumar Singh <support@pay10.com>
  Author URI: http://www.pay10.com
  */
@@ -27,6 +27,7 @@ function woocommerce_pay_init()
             $this->id           = 'pay';
             $this->method_title = __('Pay10 Payment Gateway', 'woocommerce');
             $this->icon         = apply_filters('woocommerce_pay_icon', plugins_url().'/wc-pay/images/logo.png');
+            $this->method_description = __('Take payments from your customers via multiple modes.', 'woocommerce');//added in 2023
             $this->has_fields   = false;
 
             // Load the form fields and settings.
@@ -42,7 +43,6 @@ function woocommerce_pay_init()
             $this->currency_code        = $this->settings['currency_code'];
             $this->mode                 = $this->settings['mode'];
             $this->merchant_hosted_key = $this->settings['merchant_hosted_key'];
-           // print_r($this->settings['mode']);exit;
 
             if($this->settings['mode']=='no'){
               $this->pg_request_url       = 'https://secure.pay10.com/pgui/jsp/paymentrequest';
@@ -130,7 +130,7 @@ function woocommerce_pay_init()
             $transaction_request->setReturnUrl($this->return_url);
             $transaction_request->setCurrencyCode(356);
             $transaction_request->setTxnType('SALE');
-            $transaction_request->setOrderId(date('dmyHis').rand(1000,9999).$order->id);
+            $transaction_request->setOrderId(date('dmyHis').rand(100,999)."_".$order->id);
             $transaction_request->setCustEmail($order->billing_email);
             $transaction_request->setCustName($order->billing_first_name.' '.$order->billing_last_name);
             $transaction_request->setCustStreetAddress1($order->billing_address_1);
@@ -184,7 +184,7 @@ function woocommerce_pay_init()
             /* WooCommerce update order */
             if (isset($response['RESPONSE_CODE'])) {
                 if ($response['RESPONSE_CODE'] == '000' && $response['STATUS'] == 'Captured') {
-                    $order->add_order_note('Order ID: ' . $order_id . '. ' . $response['RESPONSE_MESSAGE'] . '. Transaction Reference: ' . $response['TXN_ID']);
+                    $order->add_order_note('Order ID: ' . $order_id . '. ' . $response['RESPONSE_MESSAGE'] . '. Transaction Reference: ' . $response['TXN_ID'] . '.PG Order ID: ' . $response['ORDER_ID']);
                     $order->payment_complete();
                     $woocommerce->cart->empty_cart();
                     wc_add_notice($this->success_message, 'success');
@@ -193,7 +193,7 @@ function woocommerce_pay_init()
                     exit;
                 } else {
                     $order->update_status('Failed');
-                    $order->add_order_note('Order ID: ' . $order_id . '. ' . $response['RESPONSE_MESSAGE'] . '. error:' . $response['RESPONSE_CODE']);
+                    $order->add_order_note('Order ID: ' . $order_id . '. ' . $response['RESPONSE_MESSAGE'] . '. error:' . $response['RESPONSE_CODE']. '.PG Order ID: ' . $response['ORDER_ID']);
                     wc_add_notice($this->failure_message, 'error');
                     $redirect = add_query_arg('pay_for_order', 'true', add_query_arg('order', $order->order_key, add_query_arg('order_id', $order_id, get_permalink($cart_page->ID))));
                     wp_redirect($redirect);
@@ -222,7 +222,7 @@ function woocommerce_pay_init()
                     'title'   => __('Testing', 'woocommerce'),
                     'type'    => 'checkbox',
                     'label'   => __('Enable Testing', 'woocommerce'),
-                    'default' => 'yes'
+                    'default' => 'no'
                 ),
                 'title' => array(
                     'title'       => __('Title', 'woocommerce'),
