@@ -1,7 +1,6 @@
 <?php 
-//include('config.php');
 
-/* Copyright (C) Pay10 2021  - All Rights Reserved
+/* Copyright (C) Pay10 2023  - All Rights Reserved
  * Created by Rohit Kumar Singh
  *
  */
